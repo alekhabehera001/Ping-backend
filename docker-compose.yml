@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: ping-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: ping-db
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ping-redis
+    ports:
+      - '6379:6379'
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ping-api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGO_URI: mongodb://mongo:27017/ping-db
+      SKIP_AWS_SECRETS: 'true'
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  mongo_data:
